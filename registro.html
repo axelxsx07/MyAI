@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Registro e Inicio - BrainAI</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+  body, html { height: 100%; overflow: hidden; }
+  body {
+    background: url('https://raw.githubusercontent.com/axelxsx07/logo/main/FECABFCF-1BDD-4E62-9144-AAD79B2E1E45.png') no-repeat center center fixed;
+    background-size: cover;
+    perspective: 1000px;
+    animation: backgroundMove 60s infinite linear;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  @keyframes backgroundMove {
+    0% { background-position: 50% 50%; }
+    50% { background-position: 55% 45%; }
+    100% { background-position: 50% 50%; }
+  }
+  .container {
+    background: rgba(0,0,0,0.7);
+    padding: 30px;
+    border-radius: 15px;
+    width: 350px;
+    box-shadow: 0 0 25px #007BFF;
+    color: white;
+    text-align: center;
+    transition: 0.3s;
+  }
+  .container:hover { transform: scale(1.03); }
+  .header-logo {
+    width: 100px;
+    margin-bottom: 20px;
+  }
+  h2 { margin-bottom: 20px; color: #00bfff; }
+  input {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border: none;
+    border-radius: 5px;
+    box-shadow: 0 0 10px #007BFF;
+    font-size: 14px;
+  }
+  button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 15px;
+    border: none;
+    background: #007BFF;
+    color: white;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  button:hover { background: #0056b3; }
+  .toggle-form {
+    margin-top: 15px;
+    font-size: 14px;
+  }
+  .toggle-form span {
+    color: #00bfff;
+    cursor: pointer;
+  }
+  .message {
+    margin-top: 15px;
+    padding: 10px;
+    background: #0056b3;
+    border-radius: 8px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <img src="https://raw.githubusercontent.com/axelxsx07/logo/main/2347FCDD-F04C-4C09-87F9-66069E2367B8.png" alt="logo" class="header-logo" />
+  <h2 id="form-title">Iniciar Sesión</h2>
+
+  <form id="login-form" method="POST" action="/">
+    <input type="hidden" name="action" value="login" />
+    <input type="text" name="usuario" placeholder="Usuario o Correo" required />
+    <input type="password" name="password" placeholder="Contraseña" required />
+    <button type="submit">Entrar</button>
+  </form>
+
+  <form id="signup-form" method="POST" action="/" style="display:none;">
+    <input type="hidden" name="action" value="signup" />
+    <input type="text" name="usuario" placeholder="Usuario o Correo" required />
+    <input type="password" name="password" placeholder="Contraseña" required />
+    <input type="password" name="confirmar" placeholder="Confirmar Contraseña" required />
+    <button type="submit">Registrarse</button>
+  </form>
+
+  <div class="toggle-form">
+    ¿No tienes cuenta? <span onclick="toggleForms()">Regístrate</span>
+  </div>
+
+  <div class="message" id="message" style="display:none;"></div>
+</div>
+
+<script>
+  const loginForm = document.getElementById("login-form");
+  const signupForm = document.getElementById("signup-form");
+  const toggleText = document.querySelector(".toggle-form");
+  const formTitle = document.getElementById("form-title");
+  const messageBox = document.getElementById("message");
+
+  function toggleForms() {
+    if (signupForm.style.display === "none") {
+      signupForm.style.display = "block";
+      loginForm.style.display = "none";
+      formTitle.textContent = "Crear Cuenta";
+      toggleText.innerHTML = '¿Ya tienes cuenta? <span onclick="toggleForms()">Inicia sesión</span>';
+      messageBox.style.display = "none";
+    } else {
+      signupForm.style.display = "none";
+      loginForm.style.display = "block";
+      formTitle.textContent = "Iniciar Sesión";
+      toggleText.innerHTML = '¿No tienes cuenta? <span onclick="toggleForms()">Regístrate</span>';
+      messageBox.style.display = "none";
+    }
+  }
+
+  function handleResponse(e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    fetch('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(formData)
+    }).then(async res => {
+      const data = await res.json();
+      if (data.success) {
+        // Redirigir a index.html si login o signup fueron exitosos
+        window.location.href = '/index.html';
+      } else if (data.error) {
+        messageBox.style.display = "block";
+        messageBox.textContent = data.error;
+      } else {
+        messageBox.style.display = "none";
+        messageBox.textContent = "";
+      }
+    }).catch(() => {
+      messageBox.style.display = "block";
+      messageBox.textContent = "Error en la conexión.";
+    });
+  }
+
+  loginForm.addEventListener('submit', handleResponse);
+  signupForm.addEventListener('submit', handleResponse);
+</script>
+</body>
+</html>
