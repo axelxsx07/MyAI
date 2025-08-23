@@ -67,11 +67,12 @@
     color: #00bfff;
     cursor: pointer;
   }
-  .message {
-    margin-top: 15px;
-    padding: 10px;
-    background: #0056b3;
-    border-radius: 8px;
+  .error-text {
+    font-size: 12px;
+    color: #ff4d4d;
+    margin-top: -5px;
+    margin-bottom: 8px;
+    text-align: left;
   }
 </style>
 </head>
@@ -80,6 +81,7 @@
   <img src="https://raw.githubusercontent.com/axelxsx07/logo/main/2347FCDD-F04C-4C09-87F9-66069E2367B8.png" alt="logo" class="header-logo" />
   <h2 id="form-title">Iniciar Sesión</h2>
 
+  <!-- Formulario de login -->
   <form id="login-form" method="POST" action="/">
     <input type="hidden" name="action" value="login" />
     <input type="text" name="usuario" placeholder="Usuario o Correo" required />
@@ -87,19 +89,27 @@
     <button type="submit">Entrar</button>
   </form>
 
+  <!-- Formulario de registro -->
   <form id="signup-form" method="POST" action="/" style="display:none;">
     <input type="hidden" name="action" value="signup" />
+
     <input type="text" name="usuario" placeholder="Usuario o Correo" required />
-    <input type="password" name="password" placeholder="Contraseña" required />
-    <input type="password" name="confirmar" placeholder="Confirmar Contraseña" required />
+    <div id="usuario-error" class="error-text" style="display:none;"></div>
+
+    <input type="password" id="password" name="password" placeholder="Contraseña" required />
+    <div id="password-error" class="error-text" style="display:none;">
+      mínimo 8 caracteres y al menos una mayúscula
+    </div>
+
+    <input type="password" id="confirmar" name="confirmar" placeholder="Confirmar Contraseña" required />
+    <div id="confirm-error" class="error-text" style="display:none;">las contraseñas no coinciden</div>
+
     <button type="submit">Registrarse</button>
   </form>
 
   <div class="toggle-form">
     ¿No tienes cuenta? <span onclick="toggleForms()">Regístrate</span>
   </div>
-
-  <div class="message" id="message" style="display:none;"></div>
 </div>
 
 <script>
@@ -107,7 +117,12 @@
   const signupForm = document.getElementById("signup-form");
   const toggleText = document.querySelector(".toggle-form");
   const formTitle = document.getElementById("form-title");
-  const messageBox = document.getElementById("message");
+
+  const passwordInput = document.getElementById("password");
+  const confirmarInput = document.getElementById("confirmar");
+  const passwordError = document.getElementById("password-error");
+  const confirmError = document.getElementById("confirm-error");
+  const usuarioError = document.getElementById("usuario-error");
 
   function toggleForms() {
     if (signupForm.style.display === "none") {
@@ -115,20 +130,46 @@
       loginForm.style.display = "none";
       formTitle.textContent = "Crear Cuenta";
       toggleText.innerHTML = '¿Ya tienes cuenta? <span onclick="toggleForms()">Inicia sesión</span>';
-      messageBox.style.display = "none";
     } else {
       signupForm.style.display = "none";
       loginForm.style.display = "block";
       formTitle.textContent = "Iniciar Sesión";
       toggleText.innerHTML = '¿No tienes cuenta? <span onclick="toggleForms()">Regístrate</span>';
-      messageBox.style.display = "none";
     }
+
+    // Limpiar errores al cambiar de formulario
+    passwordError.style.display = "none";
+    confirmError.style.display = "none";
+    usuarioError.style.display = "none";
   }
 
-  function handleResponse(e) {
+  // Registro con validación y envío
+  signupForm.addEventListener("submit", e => {
     e.preventDefault();
-    const form = e.target;
-    const formData = new FormData(form);
+    const passwordValue = passwordInput.value;
+
+    // Validación: mínimo 8 caracteres y al menos una mayúscula
+    const passwordValid = /^(?=.*[A-Z]).{8,}$/.test(passwordValue);
+    if (!passwordValid) {
+      passwordError.style.display = "block";
+      confirmError.style.display = "none";
+      usuarioError.style.display = "none";
+      return;
+    } else {
+      passwordError.style.display = "none";
+    }
+
+    // Validar coincidencia
+    if (passwordValue !== confirmarInput.value) {
+      confirmError.style.display = "block";
+      usuarioError.style.display = "none";
+      return;
+    } else {
+      confirmError.style.display = "none";
+    }
+
+    // Enviar al backend
+    const formData = new FormData(signupForm);
     fetch('/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -136,23 +177,39 @@
     }).then(async res => {
       const data = await res.json();
       if (data.success) {
-        // Redirigir a index.html si login o signup fueron exitosos
         window.location.href = '/index.html';
       } else if (data.error) {
-        messageBox.style.display = "block";
-        messageBox.textContent = data.error;
+        // Mostrar error justo debajo del input de usuario
+        usuarioError.style.display = "block";
+        usuarioError.textContent = data.error;
       } else {
-        messageBox.style.display = "none";
-        messageBox.textContent = "";
+        usuarioError.style.display = "none";
       }
     }).catch(() => {
-      messageBox.style.display = "block";
-      messageBox.textContent = "Error en la conexión.";
+      usuarioError.style.display = "block";
+      usuarioError.textContent = "Error en la conexión.";
     });
-  }
+  });
 
-  loginForm.addEventListener('submit', handleResponse);
-  signupForm.addEventListener('submit', handleResponse);
+  // Login normal
+  loginForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const formData = new FormData(loginForm);
+    fetch('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(formData)
+    }).then(async res => {
+      const data = await res.json();
+      if (data.success) {
+        window.location.href = '/index.html';
+      } else if (data.error) {
+        alert(data.error); // Para login seguimos mostrando un alert simple
+      }
+    }).catch(() => {
+      alert("Error en la conexión.");
+    });
+  });
 </script>
 </body>
 </html>
